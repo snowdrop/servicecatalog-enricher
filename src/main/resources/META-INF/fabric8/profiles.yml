@@ -1,0 +1,42 @@
+- name: servicecatalog-default
+  enricher:
+    includes:
+    - fmp-name
+    - fmp-controller
+    - fmp-service
+    - fmp-image
+    - fmp-portname
+    - fmp-ianaservice
+    - fmp-project
+    - fmp-dependency
+    - fmp-pod-annotations
+    - fmp-git
+    # TODO: Documents and verify enrichers below
+    - fmp-debug
+    - fmp-merge
+    - fmp-remove-build-annotations
+    - fmp-volume-permission
+    # -----------------------------------------
+    # Service Catalog
+    - servicecatalog-enricher
+    # Health checks
+    - f8-prometheus
+    # Dependencies shouldn't be enriched anymore, therefor it's last in the list
+    - fmp-dependency
+    - fmp-revision-history
+    - fmp-docker-registry-secret
+    excludes:
+    - fmp-openshift-route
+
+  generator:
+    includes:
+    - spring-boot
+    - wildfly-swarm
+    - karaf
+    - vertx
+    - java-exec
+    - webapp
+  watcher:
+    includes:
+    - spring-boot
+    - docker-image

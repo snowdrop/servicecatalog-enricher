@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+
+  <parent>
+    <groupId>org.sonatype.oss</groupId>
+    <artifactId>oss-parent</artifactId>
+    <version>9</version>
+  </parent>
+
+  <groupId>me.snowdrop</groupId>
+  <artifactId>servicecatalog-enricher</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
+  <name>Snowdrop :: Service Catalog :: Enricher</name>
+
+  <url>http://snowdrop.me/</url>
+  <inceptionYear>2018</inceptionYear>
+
+  <organization>
+    <name>Red Hat</name>
+    <url>http://redhat.com</url>
+  </organization>
+
+  <licenses>
+    <license>
+      <name>Apache License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <!-- including A developer as it's required by the maven poms going into
+       central -->
+  <developers>
+    <developer>
+      <id>geeks</id>
+      <name>Snwdrop Development Team</name>
+      <organization>fabric8</organization>
+      <organizationUrl>http://snowdrop.me/</organizationUrl>
+    </developer>
+  </developers>
+
+  <scm>
+    <connection>scm:git:git@github.com:snowdrop/servicecatalog-enricher.git</connection>
+    <developerConnection>scm:git:git@github.com:snowdrop/servicecatalog-enricher.git</developerConnection>
+    <url>http://github.com/snowdrop/servicecatalog-enricher/</url>
+    <tag>${project.version}</tag>
+  </scm>
+
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
+
+    <fabric8-maven-enricher-api.version>4.0-SNAPSHOT</fabric8-maven-enricher-api.version>
+
+    <kubernetes-client.version>4.1.0</kubernetes-client.version>
+    <servicecatalaog-java-api.version>1.0.2</servicecatalaog-java-api.version>
+
+    <junit.version>4.12</junit.version>
+    <maven-failsafe-plugin.version>2.19.1</maven-failsafe-plugin.version>
+    <maven-invoker-plugin.version>2.0.0</maven-invoker-plugin.version>
+
+    <skipTests>false</skipTests>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>io.fabric8</groupId>
+        <artifactId>kubernetes-client-bom</artifactId>
+        <version>${kubernetes-client.version}</version>
+      </dependency>
+
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <dependency>
+      <groupId>io.fabric8</groupId>
+      <artifactId>fabric8-maven-enricher-api</artifactId>
+      <version>${fabric8-maven-enricher-api.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>me.snowdrop</groupId>
+      <artifactId>servicecatalog-client</artifactId>
+      <version>${servicecatalaog-java-api.version}</version>
+    </dependency>
+
+    <!-- Testing -->
+    <dependency>
+      <groupId>io.fabric8</groupId>
+      <artifactId>fabric8-maven-enricher-standard</artifactId>
+      <version>${fabric8-maven-enricher-api.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+  </dependencies>
+
+  <profiles>
+    <profile>
+      <id>itests</id>
+      
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-invoker-plugin</artifactId>
+            <version>${maven-invoker-plugin.version}</version>
+            <configuration>
+              <debug>false</debug>
+              <projectsDirectory>src/it</projectsDirectory>
+              <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
+              <!-- Opts for debuging
+                   <mavenOpts>-Xnoagent -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8000 -DaltDeploymentRepository=test-repo::default::file://${project.build.directory}/repository</mavenOpts> -->
+              <!-- Plain Opts -->
+              <mavenOpts>-DaltDeploymentRepository=test-repo::default::file://${project.build.directory}/repository</mavenOpts>
+              <pomIncludes>
+                <pomInclude>*/pom.xml</pomInclude>
+              </pomIncludes>
+              <!--postBuildHookScript>verify</postBuildHookScript-->
+              <goals>
+                <goal>clean</goal>
+                <goal>fabric8:resource</goal>
+              </goals>
+            </configuration>
+            <executions>
+              <execution>
+                <id>integration-test</id>
+                <goals>
+                  <goal>install</goal>
+                  <goal>run</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+
+      </build>
+    </profile>
+  </profiles>
+
+</project>
