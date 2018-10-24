@@ -59,11 +59,11 @@
           <profile>servicecatalog-default</profile>
           <enricher>
             <config>
-              <servicecatalog-enricher>
+              <servicecatalog>
                 <serviceClass>dh-postgresql-ap</serviceClass>
                 <servicePlan>dev</servicePlan>
                 <bind>yes</bind>
-              </servicecatalog-enricher>
+              </servicecatalog>
             </config>
           </enricher>
         </configuration>

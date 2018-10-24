@@ -18,7 +18,7 @@
     - fmp-volume-permission
     # -----------------------------------------
     # Service Catalog
-    - servicecatalog-enricher
+    - servicecatalog
     # Health checks
     - f8-prometheus
     # Dependencies shouldn't be enriched anymore, therefor it's last in the list

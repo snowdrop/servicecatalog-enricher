@@ -51,7 +51,7 @@ public class ServiceCatalogEnricher extends BaseEnricher {
     }
 
     public ServiceCatalogEnricher(MavenEnricherContext context) {
-        super(context, "servicecatalog-enricher");
+        super(context, "servicecatalog");
     }
 
     @Override
