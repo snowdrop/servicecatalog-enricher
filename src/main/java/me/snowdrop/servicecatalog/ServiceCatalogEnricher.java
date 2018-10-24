@@ -17,6 +17,7 @@
 
 package me.snowdrop.servicecatalog;
 
+import com.google.common.base.Strings;
 import io.fabric8.maven.enricher.api.BaseEnricher;
 import io.fabric8.maven.core.util.Configs;
 import io.fabric8.kubernetes.api.model.KubernetesListBuilder;
@@ -25,6 +26,7 @@ import io.fabric8.maven.enricher.api.MavenEnricherContext;
 import me.snowdrop.servicecatalog.api.model.ServiceInstanceBuilder;
 import io.fabric8.maven.core.util.MavenUtil;
 import me.snowdrop.servicecatalog.api.model.ServiceBindingBuilder;
+import me.snowdrop.servicecatalog.visitors.AddEnvVarsFromSecret;
 
 
 public class ServiceCatalogEnricher extends BaseEnricher {
@@ -47,7 +49,7 @@ public class ServiceCatalogEnricher extends BaseEnricher {
 
             protected String d;
     }
-    
+
     public ServiceCatalogEnricher(MavenEnricherContext context) {
         super(context, "servicecatalog-enricher");
     }
@@ -58,11 +60,7 @@ public class ServiceCatalogEnricher extends BaseEnricher {
         String serviceClass = getConfig(Config.serviceClass);
         String servicePlan = getConfig(Config.servicePlan);
 
-        String name = getConfig(Config.name, MavenUtil.createDefaultResourceName(getContext().getRootArtifactId()));
-
-        boolean bindingRequested = YES.equalsIgnoreCase(getConfig(Config.bind, NO));
-        String secret = getConfig(Config.secret, MavenUtil.createDefaultResourceName(getName()));
-
+        String name = getConfig(Config.name, MavenUtil.createDefaultResourceName(getContext().getArtifact().getArtifactId()));
         if (!Utils.isNullOrEmpty(serviceClass) && !Utils.isNullOrEmpty(servicePlan)) {
             log.info("Creating service instance.");
             builder.addToItems(new ServiceInstanceBuilder()
@@ -75,6 +73,16 @@ public class ServiceCatalogEnricher extends BaseEnricher {
                                .endSpec()
                                .build());
 
+            handleBinding(builder);
+       } 
+    }
+
+    public void handleBinding(KubernetesListBuilder builder) {
+        String name = getConfig(Config.name, MavenUtil.createDefaultResourceName(getContext().getArtifact().getArtifactId()));
+
+        boolean bindingRequested = YES.equalsIgnoreCase(getConfig(Config.bind, NO));
+        String secret = getConfig(Config.secret, MavenUtil.createDefaultResourceName(name));
+
             if (bindingRequested) {
                 log.info("Creating service binding.");
                 builder.addToItems(new ServiceBindingBuilder()
@@ -86,8 +94,11 @@ public class ServiceCatalogEnricher extends BaseEnricher {
                                    .withNewInstanceRef(name)
                                    .endSpec()
                                    .build());
+
+                if (!Strings.isNullOrEmpty(secret)) {
+                    builder.accept(new AddEnvVarsFromSecret(secret));
+                }
             }
-        } 
     }
 }
 
