@@ -17,16 +17,22 @@
 
 package me.snowdrop.servicecatalog;
 
+import com.google.common.base.Optional;
 import com.google.common.base.Strings;
 import io.fabric8.maven.enricher.api.BaseEnricher;
 import io.fabric8.maven.core.util.Configs;
 import io.fabric8.kubernetes.api.model.KubernetesListBuilder;
 import io.fabric8.kubernetes.client.utils.Utils;
 import io.fabric8.maven.enricher.api.MavenEnricherContext;
-import me.snowdrop.servicecatalog.api.model.ServiceInstanceBuilder;
 import io.fabric8.maven.core.util.MavenUtil;
 import me.snowdrop.servicecatalog.api.model.ServiceBindingBuilder;
+import me.snowdrop.servicecatalog.api.model.ServiceInstanceBuilder;
 import me.snowdrop.servicecatalog.visitors.AddEnvVarsFromSecret;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 
 public class ServiceCatalogEnricher extends BaseEnricher {
@@ -39,6 +45,7 @@ public class ServiceCatalogEnricher extends BaseEnricher {
             broker,
             serviceClass,
             servicePlan,
+            parameters,
             bind,
             secret,
             tags;
@@ -57,10 +64,13 @@ public class ServiceCatalogEnricher extends BaseEnricher {
     @Override
     public void addMissingResources(KubernetesListBuilder builder) {
         log.info("Checking Service Catalog configuration");
+        String name = getConfig(Config.name, MavenUtil.createDefaultResourceName(getContext().getArtifact().getArtifactId()));
+
         String serviceClass = getConfig(Config.serviceClass);
         String servicePlan = getConfig(Config.servicePlan);
 
-        String name = getConfig(Config.name, MavenUtil.createDefaultResourceName(getContext().getArtifact().getArtifactId()));
+        Map<String, Object> parameters = getMapValue(Config.parameters.name()).orNull();
+
         if (!Utils.isNullOrEmpty(serviceClass) && !Utils.isNullOrEmpty(servicePlan)) {
             log.info("Creating service instance.");
             builder.addToItems(new ServiceInstanceBuilder()
@@ -70,6 +80,7 @@ public class ServiceCatalogEnricher extends BaseEnricher {
                                .withNewSpec()
                                .withClusterServicePlanExternalName(servicePlan)
                                .withClusterServiceClassExternalName(serviceClass)
+                               .withParameters(parameters)
                                .endSpec()
                                .build());
 
@@ -100,5 +111,55 @@ public class ServiceCatalogEnricher extends BaseEnricher {
                 }
             }
     }
+
+
+    //
+    // The code below has been copied from:https://github.com/fabric8io/fabric8-maven-plugin/blob/master/enricher/fabric8/src/main/java/io/fabric8/maven/enricher/fabric8/VertxHealthCheckEnricher.java#L339
+    //
+    private Optional<Map<String, Object>> getMapValue(String attribute) {
+        String[] path = new String[]{
+                attribute
+        };
+
+        Optional<Object> element = getElement(path);
+        if (!element.isPresent()) {
+            element = getElement(attribute);
+        }
+
+        return element.transform(input -> {
+            if (input instanceof Map) {
+                return (Map<String, Object>) input;
+            } else {
+                throw new IllegalArgumentException();
+            }
+        });
+    }
+
+    private Optional<Object> getElement(String... path) {
+        final Map<String, Object> configuration = getContext().getConfiguration("io.fabric8:fabric8-maven-plugin");
+        if (configuration == null || configuration.isEmpty()) {
+            return Optional.absent();
+        }
+
+
+        String[] roots = new String[]{"enricher", "config", "servicecatalog"};
+        List<String> absolute = new ArrayList<>();
+        absolute.addAll(Arrays.asList(roots));
+        absolute.addAll(Arrays.asList(path));
+        Object root = configuration;
+        for (String key : absolute) {
+
+            if (root instanceof Map) {
+                Map<String, Object> rootMap = (Map<String, Object>) root;
+                root = rootMap.get(key);
+                if (root == null) {
+                    return Optional.absent();
+                }
+            }
+
+        }
+        return Optional.of(root);
+    }
+
 }
 
